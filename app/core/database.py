@@ -3,7 +3,6 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core import config
 
-# Database configuration from config
 DB_HOST = config.DB_HOST
 DB_PORT = config.DB_PORT
 DB_DATABASE = config.DB_DATABASE
