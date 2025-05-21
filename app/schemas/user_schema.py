@@ -1,17 +1,28 @@
-from pydantic import BaseModel, EmailStr
-from typing import List
-from app.schemas.contact_schema import ContactResponse
+from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel, EmailStr, ConfigDict
+
 
 class UserBase(BaseModel):
     username: str
     email: EmailStr
+    full_name: Optional[str] = None
+    bio: Optional[str] = None
+    is_active: bool = True
+
 
 class UserCreate(UserBase):
-    pass
+    password: str
 
-class UserResponse(UserBase):
+
+class UserRead(UserBase):
     id: int
-    contacts: List[ContactResponse] = []
+    created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PaginatedUsers(BaseModel):
+    total: int
+    users: List[UserRead]

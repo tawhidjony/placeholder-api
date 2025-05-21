@@ -2,7 +2,7 @@ from fastapi import FastAPI
 
 from app.core.database import engine
 from app.database.base_class import Base
-from app.routes.base_route import router
+from app.routes.api import router
 
 
 def init_db():
