@@ -1,8 +1,54 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session
+
+from app.core.database import get_db
+from app.schemas.user_schema import UserCreate, UserUpdate
+from app.services.user_service import crud_user
 
 route = APIRouter()
 
 
-@route.get("/")
-def list_users_controller():
-    return "hello world-----------------------"
+@route.get("/users")
+def list_users(page: int = Query(1, ge=1), limit: int = Query(10, ge=1, le=100), db: Session = Depends(get_db)):
+    result = crud_user.list_users(db=db, page=page, limit=limit)
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=result["message"])
+    return result
+
+
+@route.post("/users")
+def create_user(user_in: UserCreate, db: Session = Depends(get_db)):
+    result = crud_user.create_user(db, user_in)
+    if not result["success"]:
+        raise HTTPException(
+            status_code=422 if "errors" in result else 400,
+            detail={
+                "message": result.get("message", "An error occurred"),
+                "errors": result.get("errors")
+            } if "errors" in result else result.get("message", "Unknown error")
+        )
+    return result
+
+
+@route.get("/users/{user_id}")
+def read_user(user_id: int, db: Session = Depends(get_db)):
+    result = crud_user.get_user(db, user_id)
+    if not result["success"]:
+        raise HTTPException(status_code=404, detail=result["message"])
+    return result
+
+
+@route.put("/users/{user_id}")
+def update_user(user_id: int, user_in: UserUpdate, db: Session = Depends(get_db)):
+    result = crud_user.update_user(db, user_id, user_in)
+    if not result["success"]:
+        raise HTTPException(status_code=404, detail=result["message"])
+    return result
+
+
+@route.delete("/users/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    result = crud_user.delete_user(db, user_id)
+    if not result["success"]:
+        raise HTTPException(status_code=404, detail=result["message"])
+    return result

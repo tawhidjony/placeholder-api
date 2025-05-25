@@ -1,5 +1,5 @@
 dev:
 	python run.py
-
-mg:
-	 alembic upgrade head
+#
+#mg:
+#	 alembic upgrade head
