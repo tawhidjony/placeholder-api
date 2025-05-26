@@ -1,4 +1,8 @@
+from typing import List
+
 from pydantic import BaseModel, EmailStr, Field
+
+from app.schemas.address_schema import AddressOut
 
 
 class UserBase(BaseModel):
@@ -36,3 +40,11 @@ class UserUpdate(BaseModel):
     profile_picture: str | None = Field(None, example="https://example.com/new-image.jpg ")
     bio: str | None = Field(None, example="নতুন বায়ো")
     is_active: bool | None = Field(None, example=True)
+
+
+class UserOut(UserBase):
+    id: int
+    addresses: List[AddressOut] = []
+
+    class Config:
+        orm_mode = True

@@ -1,15 +1,16 @@
 from datetime import datetime
 
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
-from app.core.security import hash_password
+from app.core.auth import hash_password
 from app.models.user_model import User
 from app.schemas.user_schema import UserCreate, UserUpdate
+from app.utils.response_paginated import response_paginated
 
 
-class CRUDUser:
-    def create_user(self, db: Session, user_in: UserCreate):
+class UserService:
+    def create(self, db: Session, user_in: UserCreate):
         try:
             # Check for duplicate email or username
             if db.query(User).filter(User.email == user_in.email).first():
@@ -24,15 +25,15 @@ class CRUDUser:
                     "message": "The given data was invalid",
                     "errors": {"username": ["Username already taken."]}
                 }
-            hashed_password = hash_password(user_in.password_hash)
+            bcrypt_password_hash = hash_password(user_in.password_hash)
             user = User(
                 username=user_in.username,
                 email=user_in.email,
-                password_hash=hashed_password,
+                password_hash=bcrypt_password_hash,
                 full_name=user_in.full_name,
                 profile_picture=user_in.profile_picture,
                 bio=user_in.bio,
-                created_at=datetime.utcnow()
+                created_at=datetime.now()
             )
             db.add(user)
             db.commit()
@@ -54,7 +55,7 @@ class CRUDUser:
                 "errors": {"database": [f"Database error: {str(e)}"]}
             }
 
-    def get_user(self, db: Session, user_id: int):
+    def edit(self, db: Session, user_id: int):
         try:
             user = db.query(User).get(user_id)
             if not user:
@@ -63,7 +64,7 @@ class CRUDUser:
         except SQLAlchemyError as e:
             return {"success": False, "message": f"Database error: {str(e)}"}
 
-    def update_user(self, db: Session, user_id: int, user_in: UserUpdate):
+    def update(self, db: Session, user_id: int, user_in: UserUpdate):
         try:
             user = db.query(User).get(user_id)
             if not user:
@@ -78,7 +79,7 @@ class CRUDUser:
             db.rollback()
             return {"success": False, "message": f"Database error: {str(e)}"}
 
-    def delete_user(self, db: Session, user_id: int):
+    def delete(self, db: Session, user_id: int):
         try:
             user = db.query(User).get(user_id)
             if not user:
@@ -90,27 +91,15 @@ class CRUDUser:
             db.rollback()
             return {"success": False, "message": f"Database error: {str(e)}"}
 
-    def list_users(self, db: Session, page: int = 1, limit: int = 10):
+    def index(self, db: Session, page: int = 1, limit: int = 10):
         try:
             offset = (page - 1) * limit
-            query = db.query(User)
+            query = db.query(User).options(joinedload(User.addresses))
             total = query.count()
             users = query.offset(offset).limit(limit).all()
-            return {
-                "success": True,
-                "message": "User list fetched successfully.",
-                "data": users,
-                "pagination": {
-                    "total": total,
-                    "page": page,
-                    "limit": limit,
-                    "pages": (total + limit - 1) // limit,
-                    "has_next": offset + limit < total,
-                    "has_prev": page > 1
-                }
-            }
+            return response_paginated(data=users, total=total, page=page, limit=limit)
         except SQLAlchemyError as e:
             return {"success": False, "message": f"Database error: {str(e)}"}
 
 
-crud_user = CRUDUser()
+user_service = UserService()

@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean
+from sqlalchemy.orm import relationship
 
 from app.database.base_class import Base
 
@@ -18,3 +19,5 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.now())
     last_login = Column(DateTime)
+
+    addresses = relationship("Address", back_populates="user")

@@ -5,7 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.auth import verify_password, create_access_token
-from app.core.security import hash_password
+from app.core.auth import hash_password
 from app.models.user_model import User
 from app.schemas.auth_schema import UserRegister, UserLogin
 
@@ -25,11 +25,11 @@ class AuthService:
                     "message": "The given data was invalid",
                     "errors": {"username": ["Username already taken."]}
                 }
-            hashed_password = hash_password(schema.password_hash)
+            bcrypt_password_hash = hash_password(schema.password_hash)
             user = User(
                 username=schema.username,
                 email=schema.email,
-                password_hash=hashed_password,
+                password_hash=bcrypt_password_hash,
             )
             db.add(user)
             db.commit()
